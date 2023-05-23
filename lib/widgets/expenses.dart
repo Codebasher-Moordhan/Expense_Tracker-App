@@ -11,24 +11,49 @@ class Expenses extends StatefulWidget {
 }
 
 class _ExpensesState extends State<Expenses> {
-  final List<Expense> _registeredExpenses = [
-    Expense(
-      title: "Dart Course",
-      amount: 499,
-      category: Category.work,
-      date: DateTime.now(),
+  final List<Expense> _registeredExpenses = [];
+  Widget defaultShow = const Center(
+    child: Text(
+      'No Expenses to show\n  Start adding some!',
+      style: TextStyle(
+        color: Colors.grey,
+        fontWeight: FontWeight.normal,
+        fontSize: 15,
+      ),
     ),
-    Expense(
-      title: "GOTG 3",
-      amount: 358,
-      category: Category.leisure,
-      date: DateTime.now(),
-    )
-  ];
+  );
+  void _addExpense(Expense expense) {
+    setState(() {
+      _registeredExpenses.add(expense);
+    });
+  }
+
+  void _removeExpense(Expense expense) {
+    final expenseIndex = _registeredExpenses.indexOf(expense);
+    setState(() {
+      _registeredExpenses.remove(expense);
+    });
+    ScaffoldMessenger.of(context).clearSnackBars();//To immediately clear the snack bars
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Expense Deleted'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () {
+            setState(() {
+              _registeredExpenses.insert(expenseIndex, expense);
+            });
+          },
+        ),
+      ),
+    );
+  }
+
   void _openAddExpense() {
     showModalBottomSheet(
+      isScrollControlled: true,
       context: context,
-      builder: (ctx) => const NewExpense(),
+      builder: (ctx) => NewExpense(_addExpense),
     );
   }
 
@@ -43,12 +68,18 @@ class _ExpensesState extends State<Expenses> {
             icon: const Icon(Icons.add),
           ),
         ],
-        
       ),
       body: Column(
         children: [
           const Text('Chart'),
-          Expanded(child: ExpensesList(expenses: _registeredExpenses)),
+          Expanded(
+            child: (_registeredExpenses.isEmpty)
+                ? defaultShow
+                : ExpensesList(
+                    _removeExpense,
+                    expenses: _registeredExpenses,
+                  ),
+          ),
         ],
       ),
     );
